@@ -1,0 +1,474 @@
+package database;
+
+public class Book
+{
+    /* at the very beginning we need to create instance variables **/
+
+    public String title;
+    
+    public String author;
+    
+    public int year;
+    
+    public String publisher;
+    
+    public double cost;
+    
+
+    /* once we have it we have to create a constructor that allows a user to input instance variables **/
+    
+    public Book(String title,String author,int year,String publisher,double cost)
+    {   this.title=title;
+        this.author=author;
+        this.year=year;
+        this.publisher=publisher;
+        this.cost=cost;
+    }
+    
+    /* then we have to create an accessor method for each of the instance variables created above to retun whatever 
+     * has been inputted by the user
+     */
+      
+    public String getTitle()
+    {
+        return title;
+    }
+    
+     public String getAuthor()
+    {
+        return author;
+    }
+    public int getYear()
+    {
+        return year;
+    }
+    public String getPublisher()
+    {
+        return publisher;
+    } 
+    public double getCost()
+    {
+        return cost;
+    }
+    
+
+    /* now we create a mutator method for each of the instance variables created above that allows a user to change
+     * the state of the object.
+     */
+
+    public void setTitle(String title)
+    {
+        this.title=title;
+    }
+    
+     public void setAuthor(String author)
+    {
+       this.author=author;
+    }
+    public void setYear(int year)
+    {
+        this.year=year;
+    }
+    public void setPublisher(String publisher)
+    {
+        this.publisher=publisher;
+    } 
+    public void setCost(double cost)
+    {
+        this.cost=cost;
+    }    
+    
+    
+    /* the last part here is to create a toString method that returns all of the details of the book that has been inputted. **/
+    
+    public String toString()
+    {
+        return "The details of the book are: " + title + ", " + author + ", " + year + ", " + publisher + ", " + cost;
+    }
+    
+    
+    
+}
+BookDatabase.java
+package database;
+
+import java.sql.*;
+
+public class BookDatabase {
+
+	private String user = "";
+	private String password = "";
+	static String url = "jdbc:odbc:Books";
+
+	static Connection link;
+	static Statement statement;
+	static ResultSet results;
+	
+	private int maxCost, bookStoreSize, bookStoreCost;
+
+	public BookDatabase() {
+
+		getConnection();		//Create Connection 
+	}
+
+	public Connection getConnection(){
+
+		try {
+			Class.forName("sun.jdbc.odbc.JdbcOdbcDriver");	
+
+		} catch(java.lang.ClassNotFoundException e) {
+			System.err.print("ClassNotFoundException: ");
+			System.err.println(e.getMessage());
+		}
+
+		try {
+			link = DriverManager.getConnection(url, user, password);
+			statement = link.createStatement();
+
+		} catch(SQLException ex) {
+			System.err.println("SQLException: " + ex.getMessage());
+		}
+
+		return link;
+
+	}
+
+	public void displayTable() throws SQLException
+	{
+
+		String select = "Select ID, Title, Author, Cost, Publisher, YearOfPublishing from Bookshelf";
+		// Step 4
+		results = statement.executeQuery(select);
+		// Step 5
+		while (results.next())
+		{
+			System.out.println("Book Id:    " + results.getInt("ID"));
+			System.out.println("Book Title:    " + results.getString("Title"));
+			System.out.println("Book Author: " + results.getString("Author"));
+			System.out.println("Publisher: " + results.getString("Publisher") + " " + results.getInt("YearOfPublishing"));
+			System.out.println("Cost       " + results.getInt("Cost"));
+			System.out.println();
+		}
+	}
+
+	public int getMaxID() throws SQLException
+
+	{
+
+		try
+
+		{
+			String select = "SELECT MAX(ID) FROM BookShelf";
+			// Step 4
+			results = statement.executeQuery(select);
+			results.next();
+
+		}
+
+		catch(Exception e){
+			System.out.println(e);
+		}	 
+
+		return results.getInt(1);
+	}
+
+	public int getMaxPrice() 
+	
+	{
+		try
+
+		{
+			String select = "SELECT MAX(Cost) FROM BookShelf";
+			// Step 4
+			results = statement.executeQuery(select);
+			results.next();
+			maxCost = results.getInt(1);
+		}
+
+		catch(Exception e){
+			System.out.println(e);
+		}	 
+		
+		return maxCost;
+	}
+	
+public int getBookStoreSize() 
+	
+	{
+		try
+
+		{
+			String select = "Select COUNT(ID) FROM BookShelf";
+			// Step 4
+			results = statement.executeQuery(select);
+			results.next();
+			bookStoreSize = results.getInt(1);
+		}
+
+		catch(Exception e){
+			System.out.println(e);
+		}	 
+		
+		return bookStoreSize;
+	}
+
+public int getBookStoreTotalCost() throws SQLException 
+
+{
+	try
+
+	{
+		String select = "Select SUM(Cost) FROM BookShelf";
+		// Step 4
+		results = statement.executeQuery(select);
+		results.next();
+			}
+
+	catch(Exception e){
+		System.out.println(e);
+	}	 
+	
+	return results.getInt(1);
+}
+	
+	
+	
+	public void saveBook(Book newBook){
+
+		try
+		{
+			int new_id = getMaxID() +1;
+			String query = "INSERT INTO BookShelf(ID, Title, Author, Cost, Publisher, YearOfPublishing) VALUES (" 
+				+ new_id 
+				+ ",'"  + newBook.getTitle()
+				+ "','" + newBook.getAuthor() 
+				+ "',"  + newBook.getCost()
+				+ ",'"  + newBook.getPublisher() + "',"
+				+ newBook.getYear() + ")";
+
+			int result = statement.executeUpdate(query);
+			if (result == 0){
+
+				System.out.println("Failed to insert the following data: " 
+						+ newBook.getTitle() + "," 
+						+ newBook.getAuthor() + ","
+						+ newBook.getCost() + ","
+						+ newBook.getPublisher() + ","
+						+ newBook.getYear());
+			}
+		}
+		catch(Exception e){
+			System.out.println(e);
+		}
+
+
+		// No further queries, so no step 6
+
+		try{
+			// Step 7
+			link.close();
+		}
+		catch(SQLException e){
+			System.out.println("Unable to disconnect");
+			e.printStackTrace();
+			System.exit(1);
+		}
+
+	}  //end main
+} // end JDBCSelect
+BookGUI.java
+package database;
+
+import java.awt.FlowLayout;
+import java.awt.Container;
+import java.awt.event.ActionEvent;
+import javax.swing.*;
+import java.awt.event.ActionListener; 
+import java.sql.SQLException;
+
+	/**
+	 * This class operates as the graphical user interface that interacts with the 
+	 * Book and BookShelf classes to add Books to the array and return 
+	 * a graphical representation of information from the BookShelf methods.  
+	 * 
+	 * @author  Tony O'Keeffe
+	 * @version 1.0
+	 */
+
+public class BookGUI extends JFrame implements ActionListener
+{
+	/**
+		 * 
+		 */
+		private static final long serialVersionUID = 1L;
+	// Declare the instance variables for the class
+	private String title  = "";
+	private String author  = "";
+	private String publisher  = "";
+	private int year = 0;
+	private double cost = 0;
+    private boolean goodInput = false;
+	
+	// Define the exact dimensions of the graphical interface
+    private static final int WIDTH = 600;
+   	private static final int HEIGHT = 90;
+//	private BookShelf bookShelf;
+   	private BookDatabase bookStore;
+	
+
+
+    public static void main(String[] args)
+    {
+       BookGUI gui = new BookGUI( );
+       gui.setVisible(true);
+    }
+     
+    /**
+     * Create the GUI frame with buttons and listeners
+     */
+    public BookGUI( )
+    {
+        // Create a new instance of BookShelf	
+//    	bookShelf = new BookShelf();
+    	bookStore = new BookDatabase();
+    	
+        JFrame frame = this; 
+     	
+        // Create the main frame's menu bar.
+        JMenuBar menubar = new JMenuBar();
+    	frame.setJMenuBar(menubar);
+    	frame.pack();
+    	frame.setVisible(true);
+    	
+    	//  Create the File menu
+    	JMenu fileMenu = new JMenu("File");
+    	menubar.add(fileMenu);
+    	
+    	// Create a Quit option on the File menu
+    	JMenuItem quitItem = new JMenuItem("Quit");
+    	fileMenu.add(quitItem);
+    	quitItem.addActionListener(this); 
+    	
+    	// create the About menu
+    	JMenu aboutMenu = new JMenu ("About");
+    	menubar.add(aboutMenu);
+    	
+    	JMenuItem infoItem = new JMenuItem("Info");
+    	aboutMenu.add(infoItem);
+    	infoItem.addActionListener(this);
+    	
+    	//Set the Size of the frame    	
+    	setSize(WIDTH, HEIGHT);
+      
+    	
+        Container content = getContentPane( );
+
+        
+        // Arrange the buttons on the GUI in a Flow Layout
+        content.setLayout(new FlowLayout());
+             
+        // Set up the required buttons on the GUI and the corresponding listener for that action.
+        JButton button1 = new JButton("Add Book");
+        content.add(button1);
+        button1.addActionListener(this); 
+        
+        JButton button2 = new JButton("Cost of BookShelf");
+        content.add(button2);
+        button2.addActionListener(this);
+        
+        JButton button3 = new JButton("Size of BookShelf");
+        content.add(button3);
+        button3.addActionListener(this);
+        
+        JButton button4 = new JButton("Highest Price Paid");
+        content.add(button4);
+        button4.addActionListener(this);
+        
+        }
+    
+   /**
+    * These methods perform the corresponding action when the buttons on the GUI are clicked.
+    * Exception handling in these methods ensure the correct values are entered.  If not, the 
+    * user is prompted to re-enter the data correctly.
+    * 
+    * @param e holds the event that was fired.
+    */
+    public void actionPerformed(ActionEvent e)
+    {
+    	if (e.getActionCommand().equals("Add Book"))
+        {    
+    	   Book book = new Book("", "", 0, "", 0);
+    	   title = JOptionPane.showInputDialog("Title");
+           author = JOptionPane.showInputDialog("Author");
+           publisher = JOptionPane.showInputDialog("Publisher");
+        
+           do{
+              try 
+              { 
+        	     cost = Double.parseDouble(JOptionPane.showInputDialog("Cost"));
+        	     book.setCost(cost);
+        	     goodInput = true;
+        	  } 
+              catch (Exception cE){          
+                 JOptionPane.showMessageDialog(this, "Numerical entry required. Please re-enter a value for cost");
+        	  } 
+           }while (!goodInput);
+
+  	       goodInput = false;
+           do{
+               try 
+               { 
+         	     year = Integer.parseInt(JOptionPane.showInputDialog("Year"));
+         	     book.setYear(year);
+         	     goodInput = true;
+         	  } 
+               catch (Exception yE){          
+                  JOptionPane.showMessageDialog(this, "Numerical entry required. Please re-enter a value for year");
+         	  } 
+            }while (!goodInput);
+           
+            //Add an instance of book to the ArrayList
+            
+    	    book.setTitle(title);
+    	    book.setAuthor(author);
+    	    book.setPublisher(publisher);
+//    	    bookShelf.addBook(book);
+            bookStore.saveBook(book);
+        	
+            String message =  "The Title of the book is " + book.getTitle() 
+                           +  " the Author of the Book is "  + book.getAuthor()
+                           + " it's published by " + book.getPublisher() 
+                           + " in " + book.getYear()
+                           + " and it costs " + book.getCost() + " euro ";
+            JOptionPane.showMessageDialog(null, message, "Book Details", JOptionPane.PLAIN_MESSAGE);
+        }
+        else if (e.getActionCommand().equals("Size of BookShelf")) 
+        {
+           String message = "The book shelf has " + bookStore.getBookStoreSize() + " book(s)";
+           JOptionPane.showMessageDialog(this, message);
+        }
+        else if (e.getActionCommand().equals("Cost of BookShelf")) 
+        {
+/**           String message;
+			message = "The book shelf value is " + bookStore.getBookStoreTotalCost() + "Euro";
+			JOptionPane.showMessageDialog(this, message);
+*/
+        	System.out.println(bookStore.getBookStoreTotalCost());
+        }
+    	else if (e.getActionCommand().equals("Info"))
+        {
+        	JOptionPane.showMessageDialog(this, "Pawel Makulski - GUI Assignment Two");
+        }
+        else if (e.getActionCommand().equals("Highest Price Paid"))
+        {          
+            String message = "The highest price paid for a book is: " + bookStore.getMaxPrice() + " EUR.";
+            JOptionPane.showMessageDialog(this, message);
+        } 
+        else
+        {
+            System.exit( 0 );
+        }
+    	
+     } // end actionPerformed
+
+} //end BookGUI class
